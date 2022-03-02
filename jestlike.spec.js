@@ -14,6 +14,7 @@ define('First level', () => {
     beforeAll(() => console.log('ba ============================='));
     afterAll(() => console.log('aa ============================='));
     it('should work', () => Promise.resolve(1));
+    it('This will have some test');
     it('should fail', () => Promise.reject(new Error('Nothing works')));
   });
   it('should work', () => Promise.resolve(1));
