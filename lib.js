@@ -1,7 +1,7 @@
 const init = (initOpts) => {
   const tree = {
     pass: true,
-    log: console.log, 
+    log: (event) => console.log(event.id, event.name, event.message, event.flag), 
     beforeNodeHook: () => null,
     afterNodeHook: () => null,
     beforeHook: () => null,
@@ -11,21 +11,21 @@ const init = (initOpts) => {
 
   const createTest = (name, opts, fn) => {
     const id = opts.getId();
-    
+    if(opts.only) tree.only = id;
 
     const exec = async (run) => run(async () => {
-      if(!fn || opts.todo) return tree.log(id, name, 'TODO');
-      if(opts.skip || (tree.only && !tree.only.startsWith(id))) {
-        return tree.log(id, name, 'SKIP');
+      if(!fn || opts.todo) return tree.log({id, name, type: 'TEST', flag: 'TODO'});
+      if(opts.skip || (tree.only && !tree.only.startsWith(id.substring(0,tree.only.length)))) {
+        return tree.log({id, name, type: 'TEST', flag: 'SKIP'});
       };
-      tree.log(id, '!', name);
+      tree.log({id, name, flag: 'RUN'});
       try {
         await fn();
-        tree.log(id, '= PASS');
+        tree.log({id, flag: 'PASS'});
         return true;
       } catch (err) {
-        err?.message && tree.log(id, '? ', err.message);
-        tree.log(id, '= FAIL');
+        err?.message && tree.log({id, message: err.message, err});
+        tree.log({id, flag: 'FAIL'});
         tree.pass = false;
         return false;
       }
@@ -50,12 +50,15 @@ const init = (initOpts) => {
       children: [],
       getId: () => [node.id, (node.nextId++)].join('.'),
     };
+    if(opts.only) tree.only = id;
 
-    const addFlags = (flags, fn) => {
+    const log = (arg) => tree.log({id: node.id, name: nodeName, type: 'GROUP', ...arg});
+
+    const addFlags = (flags, mainFn) => {
       flags.forEach(flag => {
-        fn[flag] = (name, fn) => fn(name, fn, {[flag]: true});
+        mainFn[flag] = (name, fn) => mainFn(name, fn, {[flag]: true});
       });
-      return fn;
+      return mainFn;
     }
 
     const it = addFlags(['skip', 'only', 'todo'], (testName, fn, flags = {}) => {
@@ -99,17 +102,18 @@ const init = (initOpts) => {
     }
 
     const exec = async (run = baseRunner) => {
-      if(opts.skip || (tree.only && !tree.only.startsWith(node.id))){
-        tree.log(node.id, nodeName, 'SKIP');
+      if(opts.skip || (tree.only && !tree.only.startsWith(node.id.substring(0, tree.only.length)))){
+        log({ flag: 'SKIP'});
         return;
       }
       try {
         await tree.beforeHook(tree, node, build);
-        await tree.log(node.id, nodeName);
+        await log({flag: 'START'});
         await runAll(run)
       } catch(err) {
-        await tree.log(node.id, "err ? ", err.message);
+        await log({message: err.message, err});
       } finally {
+        await log({flag: 'END'});
         await tree.afterHook(tree, node, build);
       }
       return tree.pass;

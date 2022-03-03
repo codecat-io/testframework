@@ -4,7 +4,7 @@ const createNode = require('./lib.js');
 
 const logs = []
 const node = createNode({
-  log: (...args)=> logs.push(args),
+  log: (arg)=> logs.push(arg),
   beforeNodeHook: (tree, node, build) =>{
     Object.keys(build).forEach(n => {
       node['_bak_' + n] = global[n];
@@ -19,7 +19,7 @@ const node = createNode({
   },
   beforeHook: (tree, node, build) =>{
     node._log = console.log;
-    console.log = (...args) => tree.log(node.id, ...args);
+    console.log = (...args) => tree.log({id: node.id, data: args});
   },
   afterHook: (tree, node, build) => {
     console.log = node._log;
@@ -32,11 +32,11 @@ require('./jestlike.spec');
 
 (async () => {
   try{
-    console.log(require('util').inspect(exec, {showHidden: false, depth: null, colors: true}))
+    console.log(require('util').inspect(exec, {showHidden: false, depth: 6, colors: true}))
 
     const ret = await exec();
 
-    console.log(logs);
+    console.log(require('util').inspect(logs, {showHidden: false, depth: 6, colors: true}))
 
     expect(ret).to.be.eql(false);
     expect(logs).to.deep.eql([

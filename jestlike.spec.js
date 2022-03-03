@@ -1,6 +1,7 @@
 
+console.log('=========================BUILD================================')
 define('First level', () => {
-  define('failing', () => {
+  define.skip('failing', () => {
     beforeEach(() => console.log('be - also nooo!!'));
     afterEach(() => console.log('ae - nooooO!!!'));
     beforeAll(() => {console.log('ba -- no -- THROW'); throw new Error("shit")} );
@@ -15,7 +16,7 @@ define('First level', () => {
     afterAll(() => console.log('aa ============================='));
     it('should work', () => Promise.resolve(1));
     it('This will have some test');
-    it('should fail', () => Promise.reject(new Error('Nothing works')));
+    it.only('should fail', () => Promise.reject(new Error('Nothing works')));
   });
   it('should work', () => Promise.resolve(1));
   it('should fail', () => Promise.reject());
@@ -24,3 +25,4 @@ define('First level', () => {
   beforeAll(() => console.log('ba'));
   afterAll(() => console.log('aa'));
 });
+console.log('=========================BUILD-END================================')
